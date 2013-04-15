@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<title>jquery.filter demo</title>
+<meta charset="UTF-8" />
+<script src="http://code.jquery.com/jquery.js"></script>
+<script src="jquery.filter.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<link href="css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+	<div id="gridContainer">
+		<h1>jquery.filter Demo</h1>
+	</div>
+	<script type="text/javascript">
+		$(function(){					
+			var	data = [
+						{name:"Alan", height:171, weight:9, school:{name:'teste'}},
+						{name:"Aline", height:171, weight:1, school:{name:'teste'}},
+						{name:"Ben",height:182, weight:90, school:{name:'teste'}},
+						{name:"Benur",height:182, weight:90, school:{name:'teste'}},
+						{name:"Chris",height:182, weight:90, school:{name:'teste'}},
+						{name:"Robert Plant",height:182, weight:90, school:{name:'teste'}},
+						{name:"Gabriel",height:182, weight:90, school:{name:'teste'}},
+						{name:"Bernard",height:182, weight:90, school:{name:'teste'}},
+						{name:"Sandra",height:182, weight:90, school:{name:'teste'}},
+						{name:"Gabriela",height:182, weight:90, school:{name:'teste'}},
+						{name:"Alessandro",height:182, weight:90, school:{name:'teste'}},
+						{name:"Charles",height:182, weight:90, school:{name:'teste'}},
+						{name:"Priscilla Amorzinho",height:182, weight:90, school:{name:'teste'}},
+						{name:"Débora",height:182, weight:90, school:{name:'teste'}}
+					   ];
+						
+			var columns = [{ header: 'Name', key: 'name', classHeader: 'span8'},
+					       { header: 'Height', key: 'height', classHeader: 'span2'},
+						   { header: 'Weight', key: 'weight', classHeader: 'span2'}];
+			
+			var rowClick = function(e){
+							   alert(JSON.stringify(e));
+						   };
+			
+			$('#gridContainer').BootstrapGridJS({data: data, 
+											 columns: columns, 
+											 rowClick: rowClick, 
+											 pageSize: 10, 
+											 contentClass: 'span6'});
+		});
+	</script>
+</body>
+</html>
