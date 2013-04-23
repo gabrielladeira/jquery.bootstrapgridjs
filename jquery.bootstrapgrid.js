@@ -1,7 +1,7 @@
 /*
  *  Project: jquery.bootstrap-grid-js plugin
  *  Description:
- *  Author:
+ *  Author: Gabriel Ladeira github:gabrielladeira
  *  License:
  */
 
@@ -283,14 +283,19 @@
 						});
 					}
 					else{
+						
 						$col = $('<td/>', { text: e[col.key] }).attr('data-key', col.key);
+						
+						$col.click(function () {
+							self.options.rowClick(e);
+						});
 					}
 					$row.append($col);
 				});
 				
-				$row.click(function () {
-					self.options.rowClick(e);
-				});
+				//$row.click(function () {
+				//	self.options.rowClick(e);
+				//});
 
 				$row.hover(function(){
 					$(this).css('cursor',' pointer');
