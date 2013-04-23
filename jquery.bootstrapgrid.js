@@ -30,6 +30,7 @@
 		operatorSearch: 'contains',
 		contentSearchClass: 'pull-right',
 		inputSearchClass: 'span2',
+		allowFilter: true,
 
 		/*Pagination Configuration*/
 		currentPage: 1,
@@ -64,11 +65,20 @@
 		this._defaults = defaults;
         this._name = pluginName;
 		this.element = element;
+		
 		this.$el = $(element);
-		this.$table = $('<table/>', {id: this.element.id + 'GridJS', name: this.element.id + 'GridJS', class: 'table'});
+		
+		this.$table = $('<table/>', {id: this.element.id + 'TableGridJS', name: this.element.id + 'GridJS', class: 'table'});
+		
+		this.$divFilter = $('<div />', { class: 'input-prepend' });
+
 		this.$input = $('<input/>', { type: 'text', id: this.element.id + 'SearchGridJS', name: this.element.id + 'SearchGridJS', placeholder: 'Buscar', class: this.options.inputSearchClass});
-        this.$selectKey = $('<ul />', { class: 'dropdown-menu' });
-        
+		
+		this.$options = $('<select />', {class: this.options.inputSearchClass});
+		this.$options.append($('<option />', { text: 'Selecione', value: '' }));
+		this.$options.append($('<option />', { text: 'Sim', value: 'true' }));
+		this.$options.append($('<option />', { text: 'Não', value: 'false' }));
+
 		this._data = this.options.data;
 
 		this._firstPage = 1;
@@ -81,9 +91,11 @@
 			if(this._totalEls() % this.options.pageSize == 0)
 				return this._totalEls() / this.options.pageSize;
 			else
-				return parseInt(this._totalEls()/this.options.pageSize + 1);
+				return parseInt(this._totalEls() / this.options.pageSize + 1);
 		};
+
 		
+
 		this.init();
     }
 
@@ -91,7 +103,15 @@
         
 		init: function () {
 			
+			this.options.keySearch = this.options.columns[0].key;
+			
 			this.render();
+			
+			if(this.options.allowFilter)
+				this.$el.append(this.$divFilter);	
+			
+			this.$el.append(this.$table);
+			
 			this.filter();
         },
 		
@@ -108,51 +128,72 @@
 			this.renderFilter();
 			
 			this.renderHeader();
-
-			this.$el.append(this.$table);
 		},
 
 		renderFilter: function () {
 			
 			var self = this;
 
-			var $div = $('<div />', { class: 'input-prepend' });
+			self.clearFilter();
 
 			if(self.options.contentSearchClass) {
-				$div.addClass(this.options.contentSearchClass);
+				self.$divFilter.addClass(this.options.contentSearchClass);
 			}
 			
 			var $divGroup = $('<div />', { class: 'btn-group' });
 			
 			var $btn = $('<button />', { class: 'btn dropdown-toggle', tabindex: -1 }).append($('<span />', { class: 'caret' }))
-																					  .attr('data-toggle', 'dropdown');;
-			
-			var $selectedValue = $('<span />', { class: 'add-on', tabindex: -1, text: self.options.columns[0].header });
-			self.options.keySearch = self.options.columns[0].key;
+																					  .attr('data-toggle', 'dropdown');
+			var header = '';
+			$(self.options.columns).each(function(i, col)
+			{
+				if(col.key === self.options.keySearch)
+					header = col.header;
+			});
+				
+			var $selectedValue = $('<span />', { class: 'add-on', tabindex: -1, text:  header});
 
-			$divGroup.append($selectedValue).append($btn).append(self.$selectKey);
+			var $selectKey = $('<ul />', { class: 'dropdown-menu' });
+
+			$divGroup.append($selectedValue).append($btn).append($selectKey);
 			
-			$div.append($divGroup).append(self.$input);
-	
-			self.$el.append($div);
+			var type = typeof self.options.data[0][self.options.keySearch];
+					
+			if(type === 'boolean'){
+				self.$divFilter.append($divGroup).append(self.$options);
+			}
+			else{
+				self.$divFilter.append($divGroup).append(self.$input);
+			}
 
 			var columns = self.options.columns;
 					
 			$(columns).each(function(colIndex, col){
 				var $li = $('<li />').append($('<a />', {text: col.header, href: '#' }));
 				$li.attr('data-key', col.key);
-				self.$selectKey.append($li);
+				$selectKey.append($li);
 
 				$li.click(function(){
 					self.options.keySearch = $(this).attr('data-key');
-					$selectedValue.text($(this).find('a').text());
-
+					self.renderFilter();
 				});
 			});
 
 			self.$input.keyup(function () {
 				
+				console.log(self.options.keySearch);
 				var filterOps = [{key: self.options.keySearch, value: self.$input.val(), operator: self.options.operatorSearch}];
+				self.options.filterOptions = filterOps;
+				self.options.currentPage = 1;
+				self._firstPage = 1;
+
+				self.filter();
+			});
+
+			self.$options.change(function () {
+
+				console.log(self.options.keySearch);
+				var filterOps = [{key: self.options.keySearch, value: self.$options.val(), operator: self.options.operatorSearch}];
 				self.options.filterOptions = filterOps;
 				self.options.currentPage = 1;
 				self._firstPage = 1;
@@ -225,8 +266,25 @@
 				
 				var $row = $('<tr/>');	
 
+				var $col;
 				$(columns).each(function(colIndex, col){
-					var $col = $('<td/>').text(e[col.key]);
+
+					if(col.templateId){
+						$col = $('<td/>');
+						var template = _.template($('#' + col.templateId).html());
+						$col.html(template(e));
+					}
+					else if(typeof e[col.key] === 'boolean'){
+						$col = $('<td/>');
+						var $chk = $('<input/>', { type: 'checkbox', checked: e[col.key] });
+						$col.append($chk);
+						$chk.bind('change', function(){
+							e[col.key] = this.checked;
+						});
+					}
+					else{
+						$col = $('<td/>', { text: e[col.key] }).attr('data-key', col.key);
+					}
 					$row.append($col);
 				});
 				
@@ -401,7 +459,7 @@
 			var term = this.$input.val();
 			if (term) {
 				term = term.replace(/(\s+)/,"(<[^>]+>)*$1(<[^>]+>)*");
-				this.$table.find('tbody td').each(function(index, td){
+				this.$table.find('tbody td[data-key="' + this.options.keySearch + '"]').each(function(index, td){
 					var src_str = $(td).text();
 					var pattern = new RegExp("("+term+")", "i");
 					src_str = src_str.replace(pattern, "<mark>$1</mark>");
@@ -421,6 +479,10 @@
 
 		clearPagination: function(){
 			this.$el.find('.pagination').remove();
+		},
+
+		clearFilter: function(){
+			this.$divFilter.html('');
 		}
 		
     };
